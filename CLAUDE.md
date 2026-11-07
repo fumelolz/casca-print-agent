@@ -3,6 +3,7 @@
 Servicio Windows independiente (.NET 10, `net10.0-windows`, WinForms/System.Drawing) que imprime tickets en impresoras locales para el POS de Casca. Extraído del repositorio `Casca/`.
 
 - Reglas compartidas del workspace: `../CLAUDE.md`.
+- No introducir comentarios en el código (regla en `../CLAUDE.md`), incluida la documentación XML (`///`), salvo que la tarea lo pida.
 - Escucha solo en `http://localhost:9001` (no es accesible desde otras máquinas), CORS abierto sin credenciales y sin autenticación: tratar como riesgo conocido.
 - Endpoints: `GET /printers`, `GET /printers/{name}/status` (+ WebSocket de estado), `POST /printers/{name}/test`, `POST /tickets/sale`.
 - Impresión vía driver de Windows (`System.Drawing.Printing`), papel 80 mm. El ticket se dibuja en `Services/SaleTicketRenderer.cs`.
