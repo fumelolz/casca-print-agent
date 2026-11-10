@@ -100,6 +100,22 @@ public class PrinterService : IPrinterService
         }, cancellationToken);
     }
 
+    public Task<bool> PrintProductLabelAsync(PrintProductLabelRequest label, CancellationToken cancellationToken = default)
+    {
+        var installed = PrinterSettings.InstalledPrinters
+            .Cast<string>()
+            .Any(p => string.Equals(p, label.PrinterName, StringComparison.OrdinalIgnoreCase));
+
+        if (!installed)
+            return Task.FromResult(false);
+
+        return Task.Run(() =>
+        {
+            RawPrinter.Send(label.PrinterName, ProductLabelZplBuilder.Build(label));
+            return true;
+        }, cancellationToken);
+    }
+
     public async Task<PrinterStatusResponse> GetPrinterStatusAsync(
         string printerName,
         CancellationToken cancellationToken = default)

@@ -89,6 +89,7 @@ internal static class Program
         app.MapGetPrinters();
         app.MapPrintTestPage();
         app.MapPrintSaleTicket();
+        app.MapPrintProductLabel();
         app.MapGetPrinterStatus();
 
         return app;
