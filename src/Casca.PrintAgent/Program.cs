@@ -86,6 +86,7 @@ internal static class Program
         app.UseWebSocketPrinterStatus(); // middleware antes del endpoint routing
         app.UseCors();
 
+        app.MapGetVersion();
         app.MapGetPrinters();
         app.MapPrintTestPage();
         app.MapPrintSaleTicket();
