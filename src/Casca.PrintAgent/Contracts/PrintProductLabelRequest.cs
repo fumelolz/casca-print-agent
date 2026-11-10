@@ -8,5 +8,9 @@ public record PrintProductLabelRequest(
     decimal Price,
     int Copies = 1,
     int WidthMm = 51,
-    int HeightMm = 25
+    int HeightMm = 25,
+    bool ShowName = true,
+    bool ShowSku = true,
+    bool ShowPrice = true,
+    bool ShowBarcode = true
 );

@@ -17,8 +17,8 @@ public static class PrintProductLabelEndpoint
                 if (string.IsNullOrWhiteSpace(request.ProductName))
                     return Results.BadRequest(new { message = "El nombre del producto es requerido." });
 
-                if (string.IsNullOrWhiteSpace(request.Barcode) && string.IsNullOrWhiteSpace(request.Sku))
-                    return Results.BadRequest(new { message = "La etiqueta requiere código de barras o SKU." });
+                if (!request.ShowName && !request.ShowSku && !request.ShowPrice && !request.ShowBarcode)
+                    return Results.BadRequest(new { message = "La etiqueta requiere al menos un dato a mostrar." });
 
                 try
                 {
