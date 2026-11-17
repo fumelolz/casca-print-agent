@@ -3,6 +3,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.Globalization;
 using Casca.PrintAgent.Contracts;
+using QRCoder;
 
 namespace Casca.PrintAgent.Services;
 
@@ -15,6 +16,11 @@ public static class SaleTicketRenderer
 {
     /// <summary>Ancho del papel en centésimas de pulgada (80 mm ≈ 283).</summary>
     public const float PaperWidth = 280f;
+
+    private const bool ShowMarketing = true;
+    private const string MarketingDisplayUrl = "cascatiendas.com.mx";
+    private const string MarketingQrUrl = "https://cascatiendas.com.mx/?utm_source=ticket&utm_medium=qr";
+    private const float QrModuleSize = 3f;
 
     private const float Margin = 10f;
     private const float ContentWidth = PaperWidth - Margin * 2;
@@ -102,6 +108,16 @@ public static class SaleTicketRenderer
 
         if (!string.IsNullOrWhiteSpace(ticket.CashierName))
             canvas.WrappedCentered($"Atendió: {ticket.CashierName}", canvas.Small);
+
+        if (ShowMarketing)
+        {
+            canvas.Separator();
+            canvas.Centered("Gestiona tu negocio con Casca", canvas.Small);
+            canvas.Centered(MarketingDisplayUrl, canvas.Small);
+            canvas.Gap(4f);
+            canvas.QrCode(MarketingQrUrl, QrModuleSize);
+        }
+
         canvas.Gap(30f); // Espacio para que el corte no muerda el último renglón.
     }
 
@@ -160,6 +176,28 @@ public static class SaleTicketRenderer
         {
             foreach (var line in Wrap(text, font))
                 Centered(line, font);
+        }
+
+        public void QrCode(string text, float moduleSize)
+        {
+            using var generator = new QRCodeGenerator();
+            using var data = generator.CreateQrCode(text, QRCodeGenerator.ECCLevel.M);
+            var matrix = data.ModuleMatrix;
+            var quiet = 4;
+            var count = matrix.Count - quiet * 2;
+            var side = count * moduleSize;
+            var left = Margin + (ContentWidth - side) / 2f;
+
+            for (var row = 0; row < count; row++)
+            {
+                for (var col = 0; col < count; col++)
+                {
+                    if (matrix[row + quiet][col + quiet])
+                        _g.FillRectangle(Brushes.Black, left + col * moduleSize, _y + row * moduleSize, moduleSize, moduleSize);
+                }
+            }
+
+            _y += side;
         }
 
         public void Separator()
