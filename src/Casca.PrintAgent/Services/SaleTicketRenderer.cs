@@ -94,6 +94,12 @@ public static class SaleTicketRenderer
         canvas.Gap(2f);
         canvas.Row("TOTAL:", Money(ticket.Total), canvas.Bold);
 
+        if (ticket.CashReceived.HasValue)
+        {
+            canvas.Row("Efectivo recibido:", Money(ticket.CashReceived.Value), canvas.Normal);
+            canvas.Row("Cambio:", Money(ticket.ChangeGiven ?? 0m), canvas.Bold);
+        }
+
         canvas.Separator();
 
         // ── NOTAS Y PIE ──────────────────────────────────────────────────────

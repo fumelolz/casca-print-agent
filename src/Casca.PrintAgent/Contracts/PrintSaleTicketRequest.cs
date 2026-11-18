@@ -31,7 +31,9 @@ public record PrintSaleTicketRequest(
     decimal IvaTotal,
     decimal IepsTotal,
     decimal RoundingAdjustment,
-    decimal Total
+    decimal Total,
+    decimal? CashReceived = null,
+    decimal? ChangeGiven = null
 );
 
 public record TicketItemRequest(
