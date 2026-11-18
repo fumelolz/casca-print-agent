@@ -1,7 +1,7 @@
 # Genera el instalador de Casca Print Agent en .\artifacts
-# Uso: .\build-installer.ps1 [-Version 1.5.0]
+# Uso: .\build-installer.ps1 [-Version 1.5.1]
 param(
-    [string]$Version = '1.5.0'
+    [string]$Version = '1.5.1'
 )
 
 $ErrorActionPreference = 'Stop'
