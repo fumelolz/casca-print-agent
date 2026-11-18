@@ -59,7 +59,12 @@ public static class SaleTicketRenderer
         var saleDate = ticket.CreatedOnUtc.ToLocalTime();
         canvas.Row("Folio:", ticket.SaleNumber, canvas.Normal);
         canvas.Row("Fecha:", saleDate.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture), canvas.Normal);
-        canvas.Row("Pago:", ticket.PaymentMethodLabel, canvas.Normal);
+        if (ticket.Payments is { Count: > 1 })
+            canvas.Row("Pago:", "Mixto", canvas.Normal);
+        else if (canvas.Fits("Pago:", ticket.PaymentMethodLabel, canvas.Normal))
+            canvas.Row("Pago:", ticket.PaymentMethodLabel, canvas.Normal);
+        else
+            canvas.Wrapped($"Pago: {ticket.PaymentMethodLabel}", canvas.Normal);
 
         if (!string.IsNullOrWhiteSpace(ticket.CustomerName))
             canvas.Row("Cliente:", ticket.CustomerName, canvas.Normal);
@@ -93,6 +98,13 @@ public static class SaleTicketRenderer
 
         canvas.Gap(2f);
         canvas.Row("TOTAL:", Money(ticket.Total), canvas.Bold);
+
+        if (ticket.Payments is { Count: > 1 })
+        {
+            canvas.Gap(2f);
+            foreach (var payment in ticket.Payments)
+                canvas.Row($"{payment.MethodLabel}:", Money(payment.Amount), canvas.Normal);
+        }
 
         if (ticket.CashReceived.HasValue)
         {
@@ -168,6 +180,9 @@ public static class SaleTicketRenderer
             Draw(right, font, Margin + ContentWidth - rightWidth);
             _y += font.GetHeight(_g);
         }
+
+        public bool Fits(string left, string right, Font font) =>
+            Width(left, font) + Width(" ", font) + Width(right, font) <= ContentWidth;
 
         public void Wrapped(string text, Font font)
         {

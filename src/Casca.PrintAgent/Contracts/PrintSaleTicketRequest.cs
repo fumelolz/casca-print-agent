@@ -33,7 +33,8 @@ public record PrintSaleTicketRequest(
     decimal RoundingAdjustment,
     decimal Total,
     decimal? CashReceived = null,
-    decimal? ChangeGiven = null
+    decimal? ChangeGiven = null,
+    List<TicketPaymentRequest>? Payments = null
 );
 
 public record TicketItemRequest(
@@ -41,4 +42,9 @@ public record TicketItemRequest(
     decimal Quantity,
     decimal UnitPrice,   // Precio unitario con IVA (lo que ve el cliente)
     decimal Total        // Total de la partida con IVA e IEPS
+);
+
+public record TicketPaymentRequest(
+    string MethodLabel,
+    decimal Amount
 );
