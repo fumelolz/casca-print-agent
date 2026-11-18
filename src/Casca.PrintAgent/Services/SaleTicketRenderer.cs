@@ -57,14 +57,16 @@ public static class SaleTicketRenderer
 
         // ── DATOS DE LA VENTA ────────────────────────────────────────────────
         var saleDate = ticket.CreatedOnUtc.ToLocalTime();
+        if (ticket.IsReprint)
+        {
+            canvas.Centered("*** REIMPRESIÓN ***", canvas.Bold);
+            canvas.Gap(2f);
+        }
+
         canvas.Row("Folio:", ticket.SaleNumber, canvas.Normal);
         canvas.Row("Fecha:", saleDate.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture), canvas.Normal);
-        if (ticket.Payments is { Count: > 1 })
-            canvas.Row("Pago:", "Mixto", canvas.Normal);
-        else if (canvas.Fits("Pago:", ticket.PaymentMethodLabel, canvas.Normal))
-            canvas.Row("Pago:", ticket.PaymentMethodLabel, canvas.Normal);
-        else
-            canvas.Wrapped($"Pago: {ticket.PaymentMethodLabel}", canvas.Normal);
+        if (ticket.IsReprint)
+            canvas.Row("Reimpreso:", DateTime.Now.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture), canvas.Normal);
 
         if (!string.IsNullOrWhiteSpace(ticket.CustomerName))
             canvas.Row("Cliente:", ticket.CustomerName, canvas.Normal);
@@ -99,12 +101,15 @@ public static class SaleTicketRenderer
         canvas.Gap(2f);
         canvas.Row("TOTAL:", Money(ticket.Total), canvas.Bold);
 
-        if (ticket.Payments is { Count: > 1 })
-        {
-            canvas.Gap(2f);
-            foreach (var payment in ticket.Payments)
-                canvas.Row($"{payment.MethodLabel}:", Money(payment.Amount), canvas.Normal);
-        }
+        canvas.Separator();
+        canvas.Wrapped("Métodos de pago", canvas.Bold);
+        canvas.Gap(2f);
+
+        var payments = ticket.Payments is { Count: > 0 }
+            ? ticket.Payments
+            : [new TicketPaymentRequest(ticket.PaymentMethodLabel, ticket.Total)];
+        foreach (var payment in payments)
+            canvas.Row($"{payment.MethodLabel}:", Money(payment.Amount), canvas.Normal);
 
         if (ticket.CashReceived.HasValue)
         {

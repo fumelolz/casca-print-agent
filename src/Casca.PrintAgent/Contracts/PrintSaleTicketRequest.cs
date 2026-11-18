@@ -34,7 +34,8 @@ public record PrintSaleTicketRequest(
     decimal Total,
     decimal? CashReceived = null,
     decimal? ChangeGiven = null,
-    List<TicketPaymentRequest>? Payments = null
+    List<TicketPaymentRequest>? Payments = null,
+    bool IsReprint = false
 );
 
 public record TicketItemRequest(
