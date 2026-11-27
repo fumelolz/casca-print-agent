@@ -6,7 +6,7 @@
   #error Falta PublishDir: compila con build-installer.ps1
 #endif
 #ifndef AppVersion
-  #define AppVersion "1.6.0"
+  #define AppVersion "1.7.0"
 #endif
 
 #define AppName "Casca Print Agent"
