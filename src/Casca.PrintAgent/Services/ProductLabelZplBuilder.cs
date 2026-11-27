@@ -35,26 +35,33 @@ public static class ProductLabelZplBuilder
         zpl.Append("^XA^CI28^MNY^MTD");
         zpl.Append($"^PW{width}^LL{height}^LH0,0");
 
+        var fields = new List<(int X, int Y, string Command)>();
         var y = VerticalMargin;
+        var bottom = y;
+
+        void AddText(string text, int font, int lines = 1)
+        {
+            fields.Add((Margin, y, $"^A0N,{font},{font}^FB{contentWidth},{lines},0,C^FD{text}^FS"));
+            bottom = y + lines * font;
+        }
 
         if (label.ShowName && !string.IsNullOrWhiteSpace(label.ProductName))
         {
             var name = Sanitize(label.ProductName);
             var lines = name.Length > NameCharsPerLine ? 2 : 1;
-            zpl.Append($"^FO{Margin},{y}^A0N,{NameFont},{NameFont}^FB{contentWidth},{lines},0,C^FD{name}^FS");
+            AddText(name, NameFont, lines);
             y += lines * (NameFont + 4);
         }
 
         if (label.ShowSku && !skuAlreadyPrinted && !string.IsNullOrWhiteSpace(label.Sku))
         {
-            zpl.Append($"^FO{Margin},{y}^A0N,{SkuFont},{SkuFont}^FB{contentWidth},1,0,C^FD{Sanitize(label.Sku)}^FS");
+            AddText(Sanitize(label.Sku), SkuFont);
             y += SkuFont + 4;
         }
 
         if (label.ShowPrice)
         {
-            var price = "$" + label.Price.ToString("N2", CultureInfo.InvariantCulture);
-            zpl.Append($"^FO{Margin},{y}^A0N,{PriceFont},{PriceFont}^FB{contentWidth},1,0,C^FD{price}^FS");
+            AddText("$" + label.Price.ToString("N2", CultureInfo.InvariantCulture), PriceFont);
             y += PriceFont + 4;
         }
 
@@ -67,13 +74,18 @@ public static class ProductLabelZplBuilder
             var moduleWidth = barcode.Modules * 2 <= contentWidth ? 2 : 1;
             var x = Margin + Math.Max(0, (contentWidth - barcode.Modules * moduleWidth) / 2);
 
-            zpl.Append($"^FO{x},{y}^BY{moduleWidth}^BCN,{barcodeHeight},N,N,N,N^FD{barcode.Data}^FS");
+            fields.Add((x, y, $"^BY{moduleWidth}^BCN,{barcodeHeight},N,N,N,N^FD{barcode.Data}^FS"));
+            bottom = y + barcodeHeight;
             if (showReadableCode)
             {
                 y += barcodeHeight + BarcodeGap;
-                zpl.Append($"^FO{Margin},{y}^A0N,{CodeFont},{CodeFont}^FB{contentWidth},1,0,C^FD{barcode.Text}^FS");
+                AddText(barcode.Text, CodeFont);
             }
         }
+
+        var offset = Math.Max(0, (height - VerticalMargin - bottom) / 2);
+        foreach (var field in fields)
+            zpl.Append($"^FO{field.X},{field.Y + offset}{field.Command}");
 
         zpl.Append($"^PQ{copies}^XZ");
 
