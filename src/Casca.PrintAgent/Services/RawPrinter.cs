@@ -6,14 +6,17 @@ namespace Casca.PrintAgent.Services;
 
 public static class RawPrinter
 {
-    public static void Send(string printerName, string data)
+    public static void Send(string printerName, string data) =>
+        SendBytes(printerName, Encoding.UTF8.GetBytes(data), "Etiqueta Casca");
+
+    public static void SendBytes(string printerName, byte[] bytes, string documentName)
     {
         if (!OpenPrinter(printerName, out var handle, IntPtr.Zero))
             throw new Win32Exception(Marshal.GetLastWin32Error());
 
         try
         {
-            var docInfo = new DocInfo { DocName = "Etiqueta Casca", DataType = "RAW" };
+            var docInfo = new DocInfo { DocName = documentName, DataType = "RAW" };
 
             if (!StartDocPrinter(handle, 1, docInfo))
                 throw new Win32Exception(Marshal.GetLastWin32Error());
@@ -23,7 +26,6 @@ public static class RawPrinter
                 if (!StartPagePrinter(handle))
                     throw new Win32Exception(Marshal.GetLastWin32Error());
 
-                var bytes = Encoding.UTF8.GetBytes(data);
                 var written = WritePrinter(handle, bytes, bytes.Length, out _);
                 EndPagePrinter(handle);
 

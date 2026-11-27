@@ -82,16 +82,23 @@ public class PrinterService : IPrinterService
 
         return Task.Run(() =>
         {
+            if (UsesTextOnlyDriver(ticket.PrinterName))
+            {
+                RawPrinter.SendBytes(ticket.PrinterName, EscPosTicketEncoder.Build(ticket), "Ticket Casca");
+                return true;
+            }
+
             using var doc = new PrintDocument();
             doc.PrinterSettings.PrinterName = ticket.PrinterName;
-            doc.DefaultPageSettings.PaperSize = new PaperSize("80mm Receipt", 280, 2000);
+            var paperWidth = SaleTicketRenderer.PaperWidthFor(ticket.PaperWidthMm);
+            doc.DefaultPageSettings.PaperSize = new PaperSize($"{ticket.PaperWidthMm}mm Receipt", (int)paperWidth, 2000);
             doc.DefaultPageSettings.Margins = new Margins(0, 0, 0, 0);
 
             doc.PrintPage += (_, e) =>
             {
                 if (e.Graphics is null) return;
 
-                SaleTicketRenderer.Render(e.Graphics, ticket);
+                SaleTicketRenderer.Render(e.Graphics, ticket, paperWidth);
                 e.HasMorePages = false;
             };
 
@@ -228,6 +235,30 @@ public class PrinterService : IPrinterService
             WmiStatus: wmiStatus,
             PortName: portName,
             HostAddress: hostAddress);
+    }
+
+    private static bool UsesTextOnlyDriver(string printerName)
+    {
+        try
+        {
+            var escapedName = printerName.Replace("\\", "\\\\").Replace("'", "\\'");
+            using var searcher = new ManagementObjectSearcher(
+                $"SELECT DriverName FROM Win32_Printer WHERE Name = '{escapedName}'");
+            using var results = searcher.Get();
+
+            foreach (ManagementObject obj in results)
+            {
+                var driverName = obj["DriverName"]?.ToString();
+                obj.Dispose();
+                return string.Equals(driverName, "Generic / Text Only", StringComparison.OrdinalIgnoreCase);
+            }
+        }
+        catch (ManagementException)
+        {
+            return false;
+        }
+
+        return false;
     }
 
     private static string GetLocalIpAddress()

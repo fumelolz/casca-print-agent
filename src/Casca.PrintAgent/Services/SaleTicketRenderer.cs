@@ -14,8 +14,8 @@ namespace Casca.PrintAgent.Services;
 /// </summary>
 public static class SaleTicketRenderer
 {
-    /// <summary>Ancho del papel en centésimas de pulgada (80 mm ≈ 283).</summary>
-    public const float PaperWidth = 280f;
+    private const float PaperWidth58 = 190f;
+    private const float PaperWidth80 = 280f;
 
     private const bool ShowMarketing = true;
     private const string MarketingDisplayUrl = "cascatiendas.com.mx";
@@ -23,16 +23,19 @@ public static class SaleTicketRenderer
     private const float QrModuleSize = 3f;
 
     private const float Margin = 10f;
-    private const float ContentWidth = PaperWidth - Margin * 2;
 
-    public static void Render(Graphics graphics, PrintSaleTicketRequest ticket)
+    /// <summary>Ancho imprimible en centésimas de pulgada para 58 mm u 80 mm (cualquier otro valor usa 80 mm).</summary>
+    public static float PaperWidthFor(int paperWidthMm) =>
+        paperWidthMm == 58 ? PaperWidth58 : PaperWidth80;
+
+    public static void Render(Graphics graphics, PrintSaleTicketRequest ticket, float paperWidth)
     {
         graphics.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
         graphics.SmoothingMode = SmoothingMode.None;
         graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
         graphics.PixelOffsetMode = PixelOffsetMode.None;
 
-        using var canvas = new TicketCanvas(graphics);
+        using var canvas = new TicketCanvas(graphics, paperWidth - Margin * 2);
 
         // ── LOGO ─────────────────────────────────────────────────────────────
         canvas.Logo();
@@ -160,9 +163,12 @@ public static class SaleTicketRenderer
         public Font Tenant { get; } = new("Consolas", 14f, FontStyle.Bold, GraphicsUnit.Point);
         public Font Small { get; } = new("Consolas", 8f, GraphicsUnit.Point);
 
-        public TicketCanvas(Graphics graphics)
+        private readonly float _contentWidth;
+
+        public TicketCanvas(Graphics graphics, float contentWidth)
         {
             _g = graphics;
+            _contentWidth = contentWidth;
             _format = new StringFormat(StringFormat.GenericTypographic)
             {
                 FormatFlags = StringFormatFlags.NoWrap | StringFormatFlags.MeasureTrailingSpaces
@@ -173,7 +179,7 @@ public static class SaleTicketRenderer
 
         public void Centered(string text, Font font)
         {
-            var x = Margin + (ContentWidth - Width(text, font)) / 2f;
+            var x = Margin + (_contentWidth - Width(text, font)) / 2f;
             Draw(text, font, Math.Max(Margin, x));
             _y += font.GetHeight(_g);
         }
@@ -182,12 +188,12 @@ public static class SaleTicketRenderer
         {
             var rightWidth = Width(right, font);
             Draw(left, font, Margin);
-            Draw(right, font, Margin + ContentWidth - rightWidth);
+            Draw(right, font, Margin + _contentWidth - rightWidth);
             _y += font.GetHeight(_g);
         }
 
         public bool Fits(string left, string right, Font font) =>
-            Width(left, font) + Width(" ", font) + Width(right, font) <= ContentWidth;
+            Width(left, font) + Width(" ", font) + Width(right, font) <= _contentWidth;
 
         public void Wrapped(string text, Font font)
         {
@@ -212,7 +218,7 @@ public static class SaleTicketRenderer
             var quiet = 4;
             var count = matrix.Count - quiet * 2;
             var side = count * moduleSize;
-            var left = Margin + (ContentWidth - side) / 2f;
+            var left = Margin + (_contentWidth - side) / 2f;
 
             for (var row = 0; row < count; row++)
             {
@@ -229,7 +235,7 @@ public static class SaleTicketRenderer
         public void Separator()
         {
             _y += 4f;
-            _g.DrawLine(Pens.Black, Margin, _y, Margin + ContentWidth, _y);
+            _g.DrawLine(Pens.Black, Margin, _y, Margin + _contentWidth, _y);
             _y += 6f;
         }
 
@@ -245,7 +251,7 @@ public static class SaleTicketRenderer
             var cascaWidth = Width("Casca", casca);
             var tiendasWidth = Width("Tiendas", tiendas);
             var total = iconSize + gap + cascaWidth + tiendasWidth;
-            var x = Margin + Math.Max(0f, (ContentWidth - total) / 2f);
+            var x = Margin + Math.Max(0f, (_contentWidth - total) / 2f);
 
             DrawBagIcon(x, _y, iconSize);
 
@@ -315,7 +321,7 @@ public static class SaleTicketRenderer
             foreach (var word in text.Split(' ', StringSplitOptions.RemoveEmptyEntries))
             {
                 var candidate = current.Length == 0 ? word : $"{current} {word}";
-                if (Width(candidate, font) <= ContentWidth)
+                if (Width(candidate, font) <= _contentWidth)
                 {
                     current = candidate;
                     continue;
@@ -326,10 +332,10 @@ public static class SaleTicketRenderer
 
                 // Una sola palabra más ancha que el papel se parte por caracteres.
                 current = word;
-                while (Width(current, font) > ContentWidth && current.Length > 1)
+                while (Width(current, font) > _contentWidth && current.Length > 1)
                 {
                     var cut = current.Length - 1;
-                    while (cut > 1 && Width(current[..cut], font) > ContentWidth)
+                    while (cut > 1 && Width(current[..cut], font) > _contentWidth)
                         cut--;
                     lines.Add(current[..cut]);
                     current = current[cut..];
